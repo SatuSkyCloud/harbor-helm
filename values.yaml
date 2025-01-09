@@ -28,7 +28,7 @@ expose:
       secretName: ""
   ingress:
     hosts:
-      core: core.harbor.domain
+      core: registry.satusky.com
     # set to the type of ingress controller if it has specific requirements.
     # leave as `default` for most ingress controllers.
     # set to `gce` if using the GCE ingress controller
@@ -40,13 +40,9 @@ expose:
     kubeVersionOverride: ""
     className: ""
     annotations:
-      # note different ingress controllers may require a different ssl-redirect annotation
-      # for Envoy, use ingress.kubernetes.io/force-ssl-redirect: "true" and remove the nginx lines below
-      ingress.kubernetes.io/ssl-redirect: "true"
-      ingress.kubernetes.io/proxy-body-size: "0"
-      nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    # ingress-specific labels
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
+      external-dns.alpha.kubernetes.io/hostname: registry.satusky.com
+      external-dns.alpha.kubernetes.io/target: e6444c8e-e695-41c3-bab1-3a0bc0f550c1.cfargotunnel.com
     labels: {}
   clusterIP:
     # The name of ClusterIP service
@@ -109,7 +105,7 @@ expose:
 # the IP address of k8s node
 #
 # If Harbor is deployed behind the proxy, set it as the URL of proxy
-externalURL: https://core.harbor.domain
+externalURL: https://registry.satusky.com
 
 # The persistence is enabled by default and a default StorageClass
 # is needed in the k8s cluster to provision volumes dynamically.
@@ -136,7 +132,7 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 50Gi
       annotations: {}
     jobservice:
       jobLog:
@@ -144,7 +140,7 @@ persistence:
         storageClass: ""
         subPath: ""
         accessMode: ReadWriteOnce
-        size: 1Gi
+        size: 10Gi
         annotations: {}
     # If external database is used, the following settings for database will
     # be ignored
@@ -153,7 +149,7 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 50Gi
       annotations: {}
     # If external Redis is used, the following settings for Redis will
     # be ignored
@@ -162,14 +158,14 @@ persistence:
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 50Gi
       annotations: {}
     trivy:
       existingClaim: ""
       storageClass: ""
       subPath: ""
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 50Gi
       annotations: {}
   # Define which storage backend is used for registry to store
   # images and charts. Refer to
@@ -182,7 +178,7 @@ persistence:
     # Refer to
     # https://github.com/distribution/distribution/blob/release/2.8/docs/configuration.md#redirect
     # for the detail.
-    disableredirect: false
+    disableredirect: true
     # Specify the "caBundleSecretName" if the storage service uses a self-signed certificate.
     # The secret must contain keys named "ca.crt" which will be injected into the trust store
     # of registry's containers.
@@ -196,14 +192,14 @@ persistence:
       rootdirectory: /storage
       #maxthreads: 100
     azure:
-      accountname: accountname
+      accountname: satusky
       accountkey: base64encodedaccountkey
       container: containername
       #realm: core.windows.net
       # To use existing secret, the key must be AZURE_STORAGE_ACCESS_KEY
       existingSecret: ""
     gcs:
-      bucket: bucketname
+      bucket: satusky-harbor
       # The base64 encoded json file which contains the key
       encodedkey: base64-encoded-json-key-file
       #rootdirectory: /gcs/object/name/prefix
@@ -215,8 +211,8 @@ persistence:
       # Set an existing secret for S3 accesskey and secretkey
       # keys in the secret should be REGISTRY_STORAGE_S3_ACCESSKEY and REGISTRY_STORAGE_S3_SECRETKEY for registry
       #existingSecret: ""
-      region: us-west-1
-      bucket: bucketname
+      region: ap-southeast-5
+      bucket: satusky-harbor
       #accesskey: awsaccesskey
       #secretkey: awssecretkey
       #regionendpoint: http://myobjects.local
@@ -528,7 +524,19 @@ portal:
   extraEnvVars: []
   nodeSelector: {}
   tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                  - production
+              - key: storage-node
+                operator: In
+                values:
+                  - "true"
   # Spread Pods across failure-domains like regions, availability zones or nodes
   topologySpreadConstraints: []
   # - maxSkew: 1
@@ -572,7 +580,19 @@ core:
   extraEnvVars: []
   nodeSelector: {}
   tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                  - production
+              - key: storage-node
+                operator: In
+                values:
+                  - "true"
   # Spread Pods across failure-domains like regions, availability zones or nodes
   topologySpreadConstraints: []
   # - maxSkew: 1
@@ -657,9 +677,21 @@ jobservice:
   extraEnvVars: []
   nodeSelector: {}
   tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                  - production
+              - key: storage-node
+                operator: In
+                values:
+                  - "true"
   # Spread Pods across failure-domains like regions, availability zones or nodes
-  topologySpreadConstraints:
+  topologySpreadConstraints: []
   # - maxSkew: 1
   #   topologyKey: topology.kubernetes.io/zone
   #   nodeTaintsPolicy: Honor
@@ -729,7 +761,19 @@ registry:
   revisionHistoryLimit: 10
   nodeSelector: {}
   tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                  - production
+              - key: storage-node
+                operator: In
+                values:
+                  - "true"
   # Spread Pods across failure-domains like regions, availability zones or nodes
   topologySpreadConstraints: []
   # - maxSkew: 1
@@ -813,7 +857,19 @@ trivy:
   extraEnvVars: []
   nodeSelector: {}
   tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                  - production
+              - key: storage-node
+                operator: In
+                values:
+                  - "true"
   # Spread Pods across failure-domains like regions, availability zones or nodes
   topologySpreadConstraints: []
   # - maxSkew: 1
@@ -907,7 +963,19 @@ database:
     extraEnvVars: []
     nodeSelector: {}
     tolerations: []
-    affinity: {}
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: type
+                  operator: In
+                  values:
+                    - production
+                - key: storage-node
+                  operator: In
+                  values:
+                    - "true"
     ## The priority class to run the pod as
     priorityClassName:
     # containers to be run before the controller's container starts.
@@ -981,7 +1049,19 @@ redis:
     extraEnvVars: []
     nodeSelector: {}
     tolerations: []
-    affinity: {}
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: type
+                  operator: In
+                  values:
+                    - production
+                - key: storage-node
+                  operator: In
+                  values:
+                    - "true"
     ## The priority class to run the pod as
     priorityClassName:
     # containers to be run before the controller's container starts.
@@ -1047,7 +1127,19 @@ exporter:
   podLabels: {}
   nodeSelector: {}
   tolerations: []
-  affinity: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                  - production
+              - key: storage-node
+                operator: In
+                values:
+                  - "true"
   # Spread Pods across failure-domains like regions, availability zones or nodes
   topologySpreadConstraints: []
   ## The priority class to run the pod as
