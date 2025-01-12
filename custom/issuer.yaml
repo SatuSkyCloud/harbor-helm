@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: satusky-registry-letsencrypt-nginx
+  namespace: satusky-registry
+  labels:
+    app: harbor
+    app.kubernetes.io/instance: satusky-registry
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/part-of: harbor
+spec:
+  acme:
+    email: dev@satusky.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: satusky-registry-letsencrypt-nginx-private-key-ref
+    solvers:
+      - http01:
+          ingress:
+            class: ingress-nginx-sg-sgp-1

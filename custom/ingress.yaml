@@ -1,0 +1,65 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/issuer: satusky-registry-letsencrypt-nginx
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    meta.helm.sh/release-name: satusky-registry
+    meta.helm.sh/release-namespace: satusky-registry 
+  labels:
+    app: harbor
+    app.kubernetes.io/instance: satusky-registry
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: harbor
+    app.kubernetes.io/part-of: harbor
+    app.kubernetes.io/version: 2.12.1
+    chart: harbor
+    heritage: Helm
+    release: satusky-registry
+  name: satusky-registry-harbor-ingress
+  namespace: satusky-registry
+spec:
+  ingressClassName: ingress-nginx-sg-sgp-1
+  rules:
+  - host: registry.satusky.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: satusky-registry-harbor-core
+            port:
+              number: 80
+        path: /api/
+        pathType: Prefix
+      - backend:
+          service:
+            name: satusky-registry-harbor-core
+            port:
+              number: 80
+        path: /service/
+        pathType: Prefix
+      - backend:
+          service:
+            name: satusky-registry-harbor-core
+            port:
+              number: 80
+        path: /v2/
+        pathType: Prefix
+      - backend:
+          service:
+            name: satusky-registry-harbor-core
+            port:
+              number: 80
+        path: /c/
+        pathType: Prefix
+      - backend:
+          service:
+            name: satusky-registry-harbor-portal
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - registry.satusky.com
+    secretName: satusky-registry-letsencrypt-nginx-private-key-tls
