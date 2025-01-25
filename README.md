@@ -64,6 +64,11 @@ helm upgrade -i $RELEASE_NAME harbor/harbor \
   -f values.yaml
 ```
 
+Apply the custom manifests (ingress & isssuer):
+```bash
+kubectl apply -f custom
+```
+
 ## Uninstallation
 
 To uninstall/delete the `satusky-registry` deployment:
