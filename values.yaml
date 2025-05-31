@@ -264,7 +264,7 @@ persistence:
 # The initial password of Harbor admin. Change it from portal after launching Harbor
 # or give an existing secret for it
 # key in secret is given via (default to HARBOR_ADMIN_PASSWORD)
-# existingSecretAdminPassword:
+existingSecretAdminPassword: ""
 existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
 harborAdminPassword: "Harbor12345"
 
@@ -652,7 +652,7 @@ core:
   tokenCert: |
   # The XSRF key. Will be generated automatically if it isn't specified
   # While you specified, Please make sure it is 32 characters, otherwise would have validation issue at the harbor-core runtime
-  # https://github.com/goharbor/harbor/pull/21154 
+  # https://github.com/goharbor/harbor/pull/21154
   xsrfKey: ""
   # If using existingSecret, the key is defined by core.existingXsrfSecretKey
   existingXsrfSecret: ""
@@ -1114,6 +1114,14 @@ redis:
     addr: "192.168.0.2:6379"
     # The name of the set of Redis instances to monitor, it must be set to support redis+sentinel
     sentinelMasterSet: ""
+    # TLS configuration for redis connection
+    # only server-authentication is supported, mTLS for redis connection is not supported
+    # tls connection will be disable by default
+    # Once `tlsOptions.enable` set as true, tls/ssl connection will be used for redis
+    # Please set the `caBundleSecretName` in this configuration file which conatins redis server rootCA if it is self-signed.
+    # The secret must contain keys named "ca.crt" which will be injected into the trust store
+    tlsOptions:
+      enable: false
     # The "coreDatabaseIndex" must be "0" as the library Harbor
     # used doesn't support configuring it
     # harborDatabaseIndex defaults to "0", but it can be configured to "6", this config is optional
